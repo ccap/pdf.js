@@ -51,6 +51,8 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
     this.idleTimeout = null;
     this.printing = false;
     this.isThumbnailViewEnabled = false;
+
+    this.isDrawing = false;
   }
 
   PDFRenderingQueue.prototype = /** @lends PDFRenderingQueue.prototype */ {
@@ -172,11 +174,15 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
           this.highestPriorityPage = view.renderingId;
           break;
         case RenderingStates.INITIAL:
-          this.highestPriorityPage = view.renderingId;
-          var continueRendering = function () {
-            this.renderHighestPriority();
-          }.bind(this);
-          view.draw().then(continueRendering, continueRendering);
+          if (! this.isDrawing) {
+            this.isDrawing = true;
+            this.highestPriorityPage = view.renderingId;
+            var continueRendering = function () {
+              this.isDrawing = false;
+              this.renderHighestPriority();
+            }.bind(this);
+            view.draw().then(continueRendering, continueRendering);
+          }
           break;
       }
       return true;
