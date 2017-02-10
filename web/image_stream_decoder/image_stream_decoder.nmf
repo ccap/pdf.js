@@ -1,0 +1,9 @@
+{
+  "program": {
+    "portable": {
+      "pnacl-translate": {
+        "url": "image_stream_decoder-v1.0.0.pexe"
+      }
+    }
+  }
+}
