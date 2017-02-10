@@ -73,6 +73,8 @@ var isRef = corePrimitives.isRef;
 var isStream = corePrimitives.isStream;
 var DecodeStream = coreStream.DecodeStream;
 var JpegStream = coreStream.JpegStream;
+var Jbig2Stream = coreStream.Jbig2Stream;
+var JpxStream = coreStream.JpxStream;
 var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var Parser = coreParser.Parser;
@@ -114,6 +116,75 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     disableFontFace: false,
     cMapOptions: { url: null, packed: false }
   };
+
+  function WorkerNativeImageStreamDecoder(handler) {
+    this.handler = handler;
+  }
+  WorkerNativeImageStreamDecoder.prototype = {
+    decode: function NativeImageStreamDecoder_decode(image) {
+      var jbigImageRequest = function() {
+        var globals = undefined;
+        if (isDict(image.params)) {
+          var globalsStream = image.params.get('JBIG2Globals');
+          if (isStream(globalsStream)) {
+            globals = globalsStream.getBytes();
+          }
+        }
+
+        var page = image.bytes;
+
+        var data;
+        if (globals) {
+          var ary = new Uint8Array(globals.length + page.length);
+          ary.set(globals, 0);
+          ary.set(page, globals.length);
+          data = ary.buffer;
+        } else {
+          data = page.buffer.slice(page.byteOffset, page.byteOffset + page.byteLength);
+        }
+
+        return { action: 'DecodeJbig2Stream', data: data };
+      }
+
+      var jpxImageRequest = function() {
+        var ary = image.bytes;
+        var cs = image.dict.get('ColorSpace', 'CS');
+        return {
+          action: 'DecodeJpxStream',
+          data: {
+            image: ary.buffer.slice(ary.byteOffset, ary.byteOffset + ary.byteLength),
+            sMaskInData: image.dict.get('SMaskInData'),
+            indexed: isArray(cs) && isName(cs[0], 'Indexed')
+          }
+        };
+      }
+
+      var decodeRequest;
+      if (image instanceof Jbig2Stream) {
+        decodeRequest = jbigImageRequest();
+      } else if (image instanceof JpxStream) {
+        decodeRequest = jpxImageRequest();
+      }
+
+      var decodePromise = this.handler.sendWithPromise('DecodeNativeImageStream', decodeRequest);
+      return decodePromise.then(function (data) {
+        if (data) {
+          var result = new Stream(data, 0, data.byteLength, image.dict);
+          var orig = image.stream;
+          orig.reset();
+          result.stream = orig;
+          return result;
+        } else {
+          return image;
+        }
+      });
+    }
+  };
+
+  WorkerNativeImageStreamDecoder.isSupported =
+    function WorkerNativeImageStreamDecoder_isSupported(image) {
+      return image instanceof Jbig2Stream || image instanceof JpxStream;
+    };
 
   function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
     this.xref = xref;
@@ -412,8 +483,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           self.handler, self.options.forceDataSchema);
       }
 
+
+      var workerNativeImageStreamDecoder = null;
+      if (WorkerNativeImageStreamDecoder.isSupported(image)) {
+        workerNativeImageStreamDecoder = new WorkerNativeImageStreamDecoder(self.handler);
+      }
+
       PDFImage.buildImage(self.handler, self.xref, resources, image, inline,
-                          nativeImageDecoder).
+                          nativeImageDecoder, workerNativeImageStreamDecoder).
         then(function(imageObj) {
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],

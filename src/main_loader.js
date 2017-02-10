@@ -63,4 +63,5 @@
   exports.createBlob = sharedUtil.createBlob;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
+  exports.NativeImageStreamDecoder = displayAPI.NativeImageStreamDecoder;
 }));

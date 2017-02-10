@@ -1425,6 +1425,37 @@ function webViewerInitialized() {
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
   }
 
+  if (appConfig.imageStreamDecoderListener) {
+    var moduleEl = document.createElement('embed');
+    moduleEl.setAttribute('width', 0);
+    moduleEl.setAttribute('height', 0);
+    moduleEl.setAttribute('path', 'image_stream_decoder');
+    moduleEl.setAttribute('src', 'image_stream_decoder/image_stream_decoder.nmf');
+    moduleEl.setAttribute('type', 'application/x-pnacl');
+
+    var initImageStreamDecoder = function() {
+      console.info('Native image stream decoder module loaded successfully.');
+      pdfjsLib.NativeImageStreamDecoder.init(moduleEl);
+    };
+    var disableImageStreamDecoder = function(which) {
+      return function() {
+        console.error(
+          'Image stream decoder has stopped (' + which +
+          '). Last error was ' + moduleEl.lastError + '.'
+        );
+        pdfjsLib.NativeImageStreamDecoder.disable();
+      }
+    };
+
+    var listenerEl = appConfig.imageStreamDecoderListener;
+    listenerEl.addEventListener('loadend', initImageStreamDecoder, true);
+    listenerEl.addEventListener('error', disableImageStreamDecoder('error'), true);
+    listenerEl.addEventListener('crash', disableImageStreamDecoder('crash'), true);
+    listenerEl.appendChild(moduleEl);
+
+    document.body.appendChild(listenerEl);
+  }
+
   var PDFJS = pdfjsLib.PDFJS;
 
   if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) ||

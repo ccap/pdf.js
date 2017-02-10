@@ -50,9 +50,12 @@ var PDFImage = (function PDFImageClosure() {
    * Decodes the image using native decoder if possible. Resolves the promise
    * when the image data is ready.
    */
-  function handleImageData(image, nativeDecoder) {
+  function handleImageData(image, nativeDecoder, nativeImageStreamDecoder) {
     if (nativeDecoder && nativeDecoder.canDecode(image)) {
       return nativeDecoder.decode(image);
+    }
+    if (nativeImageStreamDecoder) {
+      return nativeImageStreamDecoder.decode(image);
     }
     return Promise.resolve(image);
   }
@@ -206,8 +209,8 @@ var PDFImage = (function PDFImageClosure() {
    */
   PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
                                                      res, image, inline,
-                                                     nativeDecoder) {
-    var imagePromise = handleImageData(image, nativeDecoder);
+                                                     nativeDecoder, nativeImageStreamDecoder) {
+    var imagePromise = handleImageData(image, nativeDecoder, nativeImageStreamDecoder);
     var smaskPromise;
     var maskPromise;
 
@@ -215,13 +218,13 @@ var PDFImage = (function PDFImageClosure() {
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      smaskPromise = handleImageData(smask, nativeDecoder);
+      smaskPromise = handleImageData(smask, nativeDecoder, nativeImageStreamDecoder);
       maskPromise = Promise.resolve(null);
     } else {
       smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          maskPromise = handleImageData(mask, nativeDecoder);
+          maskPromise = handleImageData(mask, nativeDecoder, nativeImageStreamDecoder);
         } else if (isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {

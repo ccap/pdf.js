@@ -53,6 +53,8 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
 function getViewerConfiguration() {
   return {
     appContainer: document.body,
+    imageStreamDecoderListener:
+      navigator.mimeTypes['application/x-pnacl'] && document.getElementById('imageStreamDecoderListener'),
     mainContainer: document.getElementById('viewerContainer'),
     viewerContainer: document.getElementById('viewer'),
     eventBus: null, // using global event bus with DOM events
