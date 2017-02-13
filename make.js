@@ -119,6 +119,7 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
   mkdir('-p', GENERIC_DIR + '/web/cmaps');
+  mkdir('-p', GENERIC_DIR + '/web/image_stream_decoder');
 
   var defines = builder.merge(DEFINES, {GENERIC: true});
 
@@ -131,7 +132,11 @@ target.generic = function() {
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
       ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
-      ['web/locale', GENERIC_DIR + '/web']
+      ['web/locale', GENERIC_DIR + '/web'],
+      ['web/image_stream_decoder/image_stream_decoder.nmf',
+       GENERIC_DIR + '/web/image_stream_decoder'],
+      ['web/image_stream_decoder/image_stream_decoder-v1.0.0.pexe',
+       GENERIC_DIR + '/web/image_stream_decoder'],
     ],
     preprocess: [
       [BUILD_TARGETS, GENERIC_DIR + BUILD_DIR],
