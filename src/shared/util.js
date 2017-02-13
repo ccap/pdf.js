@@ -1454,7 +1454,7 @@ PDFJS.createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-function MessageHandler(name, comObj) {
+function MessageHandler(name, comObj, useEventListener) {
   this.name = name;
   this.comObj = comObj;
   this.callbackIndex = 1;
@@ -1472,7 +1472,7 @@ function MessageHandler(name, comObj) {
     UnsupportedManager.notify(data);
   }];
 
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+  var _onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
     if (data.isReply) {
       var callbackId = data.callbackId;
@@ -1512,6 +1512,12 @@ function MessageHandler(name, comObj) {
       error('Unknown action from worker: ' + data.action);
     }
   };
+
+  if (useEventListener) {
+    comObj.addEventListener('message', _onComObjOnMessage);
+  } else {
+    comObj.onmessage = _onComObjOnMessage;
+  }
 }
 
 MessageHandler.prototype = {

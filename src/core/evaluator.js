@@ -17,7 +17,7 @@
 /* globals assert, ColorSpace, DecodeStream, Dict, Encodings,
            error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
            FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
-           isNum, isStream, isString, JpegStream, Lexer, Metrics,
+           isNum, isStream, isString, JpegStream, Jbig2Stream, JpxStream, Lexer, Metrics,
            MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
            RefSetCache, isRef, TextRenderingMode, ToUnicodeMap, CMapFactory,
@@ -38,6 +38,75 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.idCounters = idCounters;
     this.fontCache = fontCache;
   }
+
+  function WorkerNativeImageStreamDecoder(handler) {
+    this.handler = handler;
+  }
+  WorkerNativeImageStreamDecoder.prototype = {
+    decode: function NativeImageStreamDecoder_decode(image) {
+      var jbigImageRequest = function() {
+        var globals = undefined;
+        if (isDict(image.params)) {
+          var globalsStream = image.params.get('JBIG2Globals');
+          if (isStream(globalsStream)) {
+            globals = globalsStream.getBytes();
+          }
+        }
+
+        var page = image.bytes;
+
+        var data;
+        if (globals) {
+          var ary = new Uint8Array(globals.length + page.length);
+          ary.set(globals, 0);
+          ary.set(page, globals.length);
+          data = ary.buffer;
+        } else {
+          data = page.buffer.slice(page.byteOffset, page.byteOffset + page.byteLength);
+        }
+
+        return { action: 'DecodeJbig2Stream', data: data };
+      }
+
+      var jpxImageRequest = function() {
+        var ary = image.bytes;
+        var cs = image.dict.get('ColorSpace', 'CS');
+        return {
+          action: 'DecodeJpxStream',
+          data: {
+            image: ary.buffer.slice(ary.byteOffset, ary.byteOffset + ary.byteLength),
+            sMaskInData: image.dict.get('SMaskInData'),
+            indexed: isArray(cs) && isName(cs[0], 'Indexed')
+          }
+        };
+      }
+
+      var decodeRequest;
+      if (image instanceof Jbig2Stream) {
+        decodeRequest = jbigImageRequest();
+      } else if (image instanceof JpxStream) {
+        decodeRequest = jpxImageRequest();
+      }
+
+      var decodePromise = this.handler.sendWithPromise('DecodeNativeImageStream', decodeRequest);
+      return decodePromise.then(function (data) {
+        if (data) {
+          var result = new Stream(data, 0, data.byteLength, image.dict);
+          var orig = image.stream;
+          orig.reset();
+          result.stream = orig;
+          return result;
+        } else {
+          return image;
+        }
+      });
+    }
+  };
+
+  WorkerNativeImageStreamDecoder.isSupported =
+    function WorkerNativeImageStreamDecoder_isSupported(image) {
+      return image instanceof Jbig2Stream || image instanceof JpxStream;
+    };
 
   // Trying to minimize Date.now() usage and check every 100 time
   var TIME_SLOT_DURATION_MS = 20;
@@ -249,7 +318,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return;
       }
 
-      PDFImage.buildImage(self.handler, self.xref, resources, image, inline).
+      var workerNativeImageStreamDecoder = null;
+      if (WorkerNativeImageStreamDecoder.isSupported(image)) {
+        workerNativeImageStreamDecoder = new WorkerNativeImageStreamDecoder(self.handler);
+      }
+
+      PDFImage.buildImage(self.handler, self.xref, resources, image, inline,
+                          workerNativeImageStreamDecoder).
         then(function(imageObj) {
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],

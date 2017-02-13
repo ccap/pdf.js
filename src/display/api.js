@@ -1270,6 +1270,23 @@ var WorkerTransport = (function WorkerTransportClosure() {
           img.src = imageUrl;
         });
       });
+
+      messageHandler.on('DecodeNativeImageStream', function decodeNativeImageStream(data) {
+        if (NativeImageStreamDecoder.enabled) {
+          return NativeImageStreamDecoder.messageHandler.sendWithPromise(data.action, data.data)
+            .then(
+              function (imageData) {
+                return imageData;
+              },
+              function (error) {
+                warn('Native image stream decoder failed with error: ' + error);
+                return false;
+              }
+            );
+        } else {
+          return false;
+        }
+      }, this);
     },
 
     fetchDocument: function WorkerTransport_fetchDocument(loadingTask, source) {
@@ -1652,3 +1669,30 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   return InternalRenderTask;
 })();
+
+var NativeImageStreamDecoder = (function NativeImageStreamDecoderClosure() {
+  var result = {
+    init: function(module) {
+      info('Initializing native image stream decoder message handler');
+      result.enabled = true;
+      var messageHandler =
+        new MessageHandler(
+          "NativeImageStreamDecoder",
+          module,
+          true
+        );
+      messageHandler.postMessageTransfers = false;
+      messageHandler.on('Error', function (message) {
+        console.error("Image stream decoder returned error: " + message);
+      });
+      result.messageHandler = messageHandler;
+    },
+    disable: function() {
+      result.enabled = false;
+      result.messageHandler = null;
+      warn('Disabling native image stream decoder');
+    }
+  };
+  return result;
+})();
+

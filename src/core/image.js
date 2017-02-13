@@ -24,7 +24,7 @@ var PDFImage = (function PDFImageClosure() {
    * Decode the image in the main thread if it supported. Resovles the promise
    * when the image data is ready.
    */
-  function handleImageData(handler, xref, res, image) {
+  function handleImageData(handler, xref, res, image, nativeImageStreamDecoder) {
     if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
@@ -37,6 +37,8 @@ var PDFImage = (function PDFImageClosure() {
         var data = message.data;
         return new Stream(data, 0, data.length, image.dict);
       });
+    } else if (nativeImageStreamDecoder) {
+      return nativeImageStreamDecoder.decode(image);
     } else {
       return Promise.resolve(image);
     }
@@ -152,8 +154,9 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
-                                                     res, image, inline) {
-    var imagePromise = handleImageData(handler, xref, res, image);
+                                                     res, image, inline,
+                                                     nativeImageStreamDecoder) {
+    var imagePromise = handleImageData(handler, xref, res, image, nativeImageStreamDecoder);
     var smaskPromise;
     var maskPromise;
 
@@ -161,13 +164,13 @@ var PDFImage = (function PDFImageClosure() {
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      smaskPromise = handleImageData(handler, xref, res, smask);
+      smaskPromise = handleImageData(handler, xref, res, smask, nativeImageStreamDecoder);
       maskPromise = Promise.resolve(null);
     } else {
       smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          maskPromise = handleImageData(handler, xref, res, mask);
+          maskPromise = handleImageData(handler, xref, res, mask, nativeImageStreamDecoder);
         } else if (isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {

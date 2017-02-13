@@ -23,6 +23,7 @@
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
+           NativeImageStreamDecoder,
            IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
@@ -1462,6 +1463,40 @@ function webViewerInitialized() {
 //document.getElementById('openFile').setAttribute('hidden', 'true');
 //document.getElementById('secondaryOpenFile').setAttribute('hidden', 'true');
 //#endif
+
+  var imageStreamDecoderListener =
+    navigator.mimeTypes['application/x-pnacl'] && document.getElementById('imageStreamDecoderListener');
+
+  if (imageStreamDecoderListener) {
+    var moduleEl = document.createElement('embed');
+    moduleEl.setAttribute('width', 0);
+    moduleEl.setAttribute('height', 0);
+    moduleEl.setAttribute('path', 'image_stream_decoder');
+    moduleEl.setAttribute('src', 'image_stream_decoder/image_stream_decoder.nmf');
+    moduleEl.setAttribute('type', 'application/x-pnacl');
+
+    var initImageStreamDecoder = function() {
+      console.info('Native image stream decoder module loaded successfully.');
+      NativeImageStreamDecoder.init(moduleEl);
+    };
+    var disableImageStreamDecoder = function(which) {
+      return function() {
+        console.error(
+          'Image stream decoder has stopped (' + which +
+          '). Last error was ' + moduleEl.lastError + '.'
+        );
+        NativeImageStreamDecoder.disable();
+      }
+    };
+
+    var listenerEl = imageStreamDecoderListener;
+    listenerEl.addEventListener('load', initImageStreamDecoder, true);
+    listenerEl.addEventListener('error', disableImageStreamDecoder('error'), true);
+    listenerEl.addEventListener('crash', disableImageStreamDecoder('crash'), true);
+    listenerEl.appendChild(moduleEl);
+
+    document.body.appendChild(listenerEl);
+  }
 
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = PDFJS.locale || navigator.language;
