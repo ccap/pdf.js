@@ -1448,7 +1448,7 @@ function webViewerInitialized() {
     };
 
     var listenerEl = appConfig.imageStreamDecoderListener;
-    listenerEl.addEventListener('loadend', initImageStreamDecoder, true);
+    listenerEl.addEventListener('load', initImageStreamDecoder, true);
     listenerEl.addEventListener('error', disableImageStreamDecoder('error'), true);
     listenerEl.addEventListener('crash', disableImageStreamDecoder('crash'), true);
     listenerEl.appendChild(moduleEl);
