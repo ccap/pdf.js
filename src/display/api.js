@@ -1670,7 +1670,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   return InternalRenderTask;
 })();
 
-var NativeImageStreamDecoder = (function NativeImageStreamDecoderClosure() {
+var NativeImageStreamDecoder = PDFJS.NativeImageStreamDecoder = (function NativeImageStreamDecoderClosure() {
   var result = {
     init: function(module) {
       info('Initializing native image stream decoder message handler');

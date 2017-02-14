@@ -23,7 +23,6 @@
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           NativeImageStreamDecoder,
            IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
@@ -1477,7 +1476,7 @@ function webViewerInitialized() {
 
     var initImageStreamDecoder = function() {
       console.info('Native image stream decoder module loaded successfully.');
-      NativeImageStreamDecoder.init(moduleEl);
+      PDFJS.NativeImageStreamDecoder.init(moduleEl);
     };
     var disableImageStreamDecoder = function(which) {
       return function() {
@@ -1485,7 +1484,7 @@ function webViewerInitialized() {
           'Image stream decoder has stopped (' + which +
           '). Last error was ' + moduleEl.lastError + '.'
         );
-        NativeImageStreamDecoder.disable();
+        PDFJS.NativeImageStreamDecoder.disable();
       }
     };
 
