@@ -1427,6 +1427,7 @@ function webViewerInitialized() {
 
   if (appConfig.imageStreamDecoderListener) {
     var moduleEl = document.createElement('embed');
+    moduleEl.setAttribute('style', 'display: block;');
     moduleEl.setAttribute('width', 0);
     moduleEl.setAttribute('height', 0);
     moduleEl.setAttribute('path', 'image_stream_decoder');
@@ -1452,8 +1453,6 @@ function webViewerInitialized() {
     listenerEl.addEventListener('error', disableImageStreamDecoder('error'), true);
     listenerEl.addEventListener('crash', disableImageStreamDecoder('crash'), true);
     listenerEl.appendChild(moduleEl);
-
-    document.body.appendChild(listenerEl);
   }
 
   var PDFJS = pdfjsLib.PDFJS;
