@@ -124,8 +124,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     decode: function NativeImageStreamDecoder_decode(image) {
       var jbigImageRequest = function() {
         var globals = undefined;
-        if (isDict(image.params)) {
-          var globalsStream = image.params.get('JBIG2Globals');
+
+        var xref = image.dict.xref;
+        var decodeParms = xref.fetchIfRef(image.dict.get('DecodeParms'));
+
+        if (isDict(decodeParms)) {
+          var globalsStream = decodeParms.get('JBIG2Globals');
           if (isStream(globalsStream)) {
             globals = globalsStream.getBytes();
           }
