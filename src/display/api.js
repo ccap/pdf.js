@@ -271,6 +271,8 @@ PDFJS.getDocument = function getDocument(src,
     source = src;
   }
 
+  console.info("Loading PDF from " + src.url);
+
   var params = {};
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -636,7 +638,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pageInfo = pageInfo;
     this.transport = transport;
     this.stats = new StatTimer();
-    this.stats.enabled = !!globalScope.PDFJS.enableStats;
+    this.stats.enabled = !!globalScope.PDFJS.enableStats || !!globalScope.PDFJS.enableConsoleStats;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
     this.cleanupAfterRender = false;
@@ -785,6 +787,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         }
         stats.timeEnd('Rendering');
         stats.timeEnd('Overall');
+
+        if (stats.enabled) {
+          var consoleStats = stats.toString().trim().replace(/\n/g, ', ').replace(/\s+/g, ' ');
+          console.info('Page ' + this.pageNumber + ' complete: ' + consoleStats);
+        }
       }
 
       return renderTask;
