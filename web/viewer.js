@@ -1496,6 +1496,10 @@ function webViewerInitialized() {
     listenerEl.appendChild(moduleEl);
   }
 
+  // CCAP
+  PDFJS.disableStream = true;
+  PDFJS.enableConsoleStats = true;
+
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = PDFJS.locale || navigator.language;
 //#endif
