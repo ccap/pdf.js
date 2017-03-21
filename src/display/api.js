@@ -271,7 +271,7 @@ PDFJS.getDocument = function getDocument(src,
     source = src;
   }
 
-  console.info("Loading PDF from " + src.url);
+  console.info('[' + new Date() + "] Loading PDF from " + src.url);
 
   var params = {};
   for (var key in source) {
@@ -790,7 +790,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
         if (stats.enabled) {
           var consoleStats = stats.toString().trim().replace(/\n/g, ', ').replace(/\s+/g, ' ');
-          console.info('Page ' + this.pageNumber + ' complete: ' + consoleStats);
+          console.info('[' + new Date() + '] Page ' + this.pageNumber + ' complete: ' + consoleStats);
         }
       }
 
