@@ -58,6 +58,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
 
         var page = image.bytes;
+        image.stream.reset();
 
         var data;
         if (globals) {
@@ -74,6 +75,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var jpxImageRequest = function() {
         var ary = image.bytes;
+        image.stream.reset();
         var cs = image.dict.get('ColorSpace', 'CS');
         return {
           action: 'DecodeJpxStream',
