@@ -156,7 +156,11 @@ var PDFImage = (function PDFImageClosure() {
   PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
                                                      res, image, inline,
                                                      nativeImageStreamDecoder) {
-    var imagePromise = handleImageData(handler, xref, res, image, nativeImageStreamDecoder);
+    var isSupportedNativeImage = function(i) {
+      return i instanceof Jbig2Stream || i instanceof JpxStream;
+    };
+
+    var imagePromise = handleImageData(handler, xref, res, image, isSupportedNativeImage(image) && nativeImageStreamDecoder);
     var smaskPromise;
     var maskPromise;
 
@@ -164,13 +168,13 @@ var PDFImage = (function PDFImageClosure() {
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      smaskPromise = handleImageData(handler, xref, res, smask, nativeImageStreamDecoder);
+      smaskPromise = handleImageData(handler, xref, res, smask, isSupportedNativeImage(smask) && nativeImageStreamDecoder);
       maskPromise = Promise.resolve(null);
     } else {
       smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          maskPromise = handleImageData(handler, xref, res, mask, nativeImageStreamDecoder);
+          maskPromise = handleImageData(handler, xref, res, mask, isSupportedNativeImage(mask) && nativeImageStreamDecoder);
         } else if (isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {

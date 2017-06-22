@@ -109,11 +109,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     }
   };
 
-  WorkerNativeImageStreamDecoder.isSupported =
-    function WorkerNativeImageStreamDecoder_isSupported(image) {
-      return image instanceof Jbig2Stream || image instanceof JpxStream;
-    };
-
   // Trying to minimize Date.now() usage and check every 100 time
   var TIME_SLOT_DURATION_MS = 20;
   var CHECK_TIME_EVERY = 100;
@@ -324,10 +319,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return;
       }
 
-      var workerNativeImageStreamDecoder = null;
-      if (WorkerNativeImageStreamDecoder.isSupported(image)) {
-        workerNativeImageStreamDecoder = new WorkerNativeImageStreamDecoder(self.handler);
-      }
+      var workerNativeImageStreamDecoder = new WorkerNativeImageStreamDecoder(self.handler);
 
       PDFImage.buildImage(self.handler, self.xref, resources, image, inline,
                           workerNativeImageStreamDecoder).
